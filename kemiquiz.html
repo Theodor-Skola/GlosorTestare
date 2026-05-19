@@ -1,0 +1,790 @@
+<!DOCTYPE html>
+<html lang="sv">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>KemiQuiz — Kemi 1</title>
+<link href="https://fonts.googleapis.com/css2?family=Space+Mono:wght@400;700&family=DM+Sans:opsz,wght@9..40,300;9..40,400;9..40,500;9..40,600&display=swap" rel="stylesheet">
+<style>
+*{box-sizing:border-box;margin:0;padding:0}
+:root{
+  --bg:#060a12;--s1:#0d1525;--s2:#162038;
+  --border:rgba(255,255,255,0.09);
+  --text:#d4e2f4;--muted:#5a7a9e;
+  --accent:#0fd4a0;--accent-dim:rgba(15,212,160,0.12);
+  --blue:#4f8dff;--purple:#9b73ff;--amber:#f4b942;--red:#f05454;
+  --mono:'Space Mono',monospace;--sans:'DM Sans',system-ui,sans-serif;
+}
+body{background:var(--bg);color:var(--text);font-family:var(--sans);min-height:100vh;display:flex;flex-direction:column}
+header{background:var(--s1);border-bottom:1px solid var(--border);padding:0 1.5rem;display:flex;align-items:center;gap:1.5rem;position:sticky;top:0;z-index:100;height:52px;flex-shrink:0}
+.logo{font-family:var(--mono);font-size:13px;color:var(--accent);letter-spacing:.1em;font-weight:700;white-space:nowrap}
+nav{display:flex;gap:4px}
+.nav-btn{background:none;border:none;color:var(--muted);font-family:var(--sans);font-size:14px;font-weight:500;padding:7px 14px;border-radius:6px;cursor:pointer;transition:.15s}
+.nav-btn:hover{background:var(--s2);color:var(--text)}
+.nav-btn.active{background:var(--accent-dim);color:var(--accent)}
+.section{display:none;flex:1;padding:2rem;max-width:860px;margin:0 auto;width:100%}
+.section.active{display:block}
+#sec-spela{max-width:100%;padding:0}
+#sec-spela.active{display:flex;flex-direction:column}
+h1{font-size:20px;font-weight:600;margin-bottom:6px}
+.sub{color:var(--muted);font-size:14px;margin-bottom:1.5rem}
+.card{background:var(--s1);border:1px solid var(--border);border-radius:12px;padding:18px;margin-bottom:14px}
+label.field-label{font-size:11px;color:var(--muted);display:block;margin-bottom:5px;letter-spacing:.06em;text-transform:uppercase}
+input[type=text],textarea,select{background:var(--s2);border:1px solid var(--border);border-radius:8px;color:var(--text);font-family:var(--sans);font-size:14px;padding:9px 13px;outline:none;transition:border-color .15s;width:100%}
+input[type=text]:focus,textarea:focus{border-color:var(--accent)}
+textarea{resize:vertical;min-height:56px}
+.btn{border:none;border-radius:8px;font-family:var(--sans);font-size:14px;font-weight:500;padding:9px 18px;cursor:pointer;transition:.15s;display:inline-flex;align-items:center;gap:6px}
+.btn-primary{background:var(--accent);color:#051a14}
+.btn-primary:hover{filter:brightness(1.1)}
+.btn-secondary{background:var(--s2);color:var(--text);border:1px solid var(--border)}
+.btn-secondary:hover{border-color:var(--muted)}
+.btn-danger{background:rgba(240,84,84,.12);color:var(--red);border:1px solid rgba(240,84,84,.25)}
+.btn-danger:hover{background:rgba(240,84,84,.22)}
+.btn-sm{padding:5px 11px;font-size:12px;border-radius:6px}
+.grid-2{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+.grid-3{display:grid;grid-template-columns:1fr 1fr 1fr auto;gap:10px;align-items:end}
+@media(max-width:640px){.grid-2,.grid-3{grid-template-columns:1fr}}
+.vocab-table{width:100%;border-collapse:collapse}
+.vocab-table th{font-size:11px;color:var(--muted);text-align:left;padding:7px 12px;border-bottom:1px solid var(--border);font-weight:500;letter-spacing:.05em;text-transform:uppercase}
+.vocab-table td{padding:11px 12px;border-bottom:1px solid rgba(255,255,255,0.04);font-size:14px;vertical-align:middle}
+.vocab-table tr:last-child td{border-bottom:none}
+.vocab-table tr:hover td{background:rgba(255,255,255,.02)}
+.sym{font-family:var(--mono);font-size:13px;color:var(--accent)}
+.props{color:var(--muted);font-size:13px;max-width:300px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.empty{text-align:center;padding:50px 20px;color:var(--muted)}
+.empty h3{font-size:15px;margin-bottom:6px;color:var(--text)}
+
+/* ── FLASHCARD ── */
+.fc-wrap{display:flex;flex-direction:column;align-items:center;padding:2rem 1rem}
+.quiz-mode-row{display:flex;gap:8px;margin-bottom:1.5rem;flex-wrap:wrap;justify-content:center}
+.qmode{background:var(--s2);border:1px solid var(--border);border-radius:8px;padding:8px 16px;font-size:13px;font-family:var(--sans);color:var(--muted);cursor:pointer;transition:.15s}
+.qmode.active{border-color:var(--accent);color:var(--accent);background:var(--accent-dim)}
+.flashcard{width:100%;max-width:460px;min-height:220px;background:var(--s1);border:1px solid var(--border);border-radius:16px;display:flex;flex-direction:column;align-items:center;justify-content:center;cursor:pointer;position:relative;transition:transform .15s,border-color .2s;padding:24px;text-align:center;margin-bottom:1.5rem;user-select:none}
+.flashcard:hover{transform:translateY(-2px);border-color:rgba(255,255,255,.18)}
+.fc-badge{position:absolute;top:12px;right:14px;font-size:10px;color:var(--muted);text-transform:uppercase;letter-spacing:.06em}
+.fc-q{font-family:var(--mono);font-size:28px;font-weight:700;color:var(--accent);line-height:1.3}
+.fc-a{font-size:18px;color:var(--text);margin-top:10px}
+.fc-props{font-size:12px;color:var(--muted);margin-top:8px;max-width:380px}
+.fc-hint{font-size:12px;color:var(--muted);margin-top:8px}
+.fc-nav{display:flex;gap:12px;align-items:center;margin-bottom:1rem}
+.fc-ctr{font-size:13px;color:var(--muted);font-family:var(--mono);min-width:60px;text-align:center}
+.progress-bar{width:100%;max-width:460px;height:3px;background:var(--s2);border-radius:2px;margin-bottom:1.5rem;overflow:hidden}
+.progress-fill{height:100%;background:var(--accent);border-radius:2px;transition:width .3s}
+
+/* ── GAME ── */
+#game-wrap{display:flex;flex-direction:column;height:calc(100vh - 52px)}
+#game-hud{background:var(--s1);border-bottom:1px solid var(--border);padding:0 16px;height:46px;display:flex;align-items:center;gap:16px;flex-shrink:0}
+.hud-stat{display:flex;align-items:center;gap:7px}
+.hud-label{font-size:10px;color:var(--muted);text-transform:uppercase;letter-spacing:.06em}
+.hud-val{font-family:var(--mono);font-size:16px;font-weight:700}
+.hud-val.s{color:var(--accent)}.hud-val.l{color:var(--blue)}.hud-val.v{font-size:14px}
+.spacer{flex:1}
+#game-canvas-wrap{flex:1;position:relative;overflow:hidden}
+#gameCanvas{display:block;width:100%;height:100%}
+#game-input-row{background:var(--s1);border-top:1px solid var(--border);padding:12px 16px;display:flex;gap:10px;align-items:center;flex-shrink:0}
+#game-answer-inp{flex:1;background:var(--s2);border:2px solid var(--border);border-radius:9px;color:var(--text);font-family:var(--mono);font-size:15px;padding:11px 14px;outline:none;transition:border-color .15s,background .15s}
+#game-answer-inp:focus{border-color:var(--accent)}
+#game-answer-inp.ok{border-color:var(--accent);background:rgba(15,212,160,.08)}
+#game-answer-inp.no{border-color:var(--red);background:rgba(240,84,84,.08)}
+#game-answer-inp:disabled{opacity:.4;cursor:not-allowed}
+#overlay{position:absolute;inset:0;background:rgba(6,10,18,.92);display:flex;flex-direction:column;align-items:center;justify-content:center;z-index:10;padding:2rem}
+.ov-title{font-size:26px;font-weight:700;font-family:var(--mono);margin-bottom:6px}
+.ov-sub{color:var(--muted);font-size:14px;margin-bottom:1.5rem;text-align:center;max-width:340px;line-height:1.6}
+.ov-score{font-family:var(--mono);font-size:52px;font-weight:700;color:var(--accent);margin-bottom:1.5rem}
+.gmode-row{display:flex;gap:8px;margin-bottom:1.5rem;flex-wrap:wrap;justify-content:center}
+.gmode-btn{background:var(--s2);border:1px solid var(--border);border-radius:8px;color:var(--muted);font-family:var(--sans);font-size:13px;padding:8px 16px;cursor:pointer;transition:.15s}
+.gmode-btn.sel{border-color:var(--accent);color:var(--accent);background:var(--accent-dim)}
+#ov-warn{display:none;margin-top:12px;font-size:13px;color:var(--red)}
+@keyframes lvlup{0%{opacity:0;transform:translate(-50%,-50%) scale(.5)}20%{opacity:1;transform:translate(-50%,-50%) scale(1.15)}70%{opacity:1;transform:translate(-50%,-50%) scale(1)}100%{opacity:0;transform:translate(-50%,-80%) scale(.9)}}
+@keyframes pts{0%{opacity:1;transform:translateY(0)}100%{opacity:0;transform:translateY(-40px)}}
+@keyframes missedIn{0%{opacity:0;transform:translateX(-50%) translateY(12px)}15%{opacity:1;transform:translateX(-50%) translateY(0)}80%{opacity:1;transform:translateX(-50%) translateY(0)}100%{opacity:0;transform:translateX(-50%) translateY(-8px)}}
+.missed-popup{position:absolute;bottom:68px;left:50%;transform:translateX(-50%);background:rgba(20,8,8,.85);border:1px solid rgba(240,84,84,.45);border-radius:10px;padding:9px 20px;z-index:15;text-align:center;pointer-events:none;white-space:nowrap;animation:missedIn 2.8s forwards}
+.missed-label{font-size:10px;color:var(--red);text-transform:uppercase;letter-spacing:.08em;display:block;margin-bottom:3px}
+.missed-row{display:flex;align-items:center;gap:8px;justify-content:center}
+.missed-q{font-family:'Space Mono',monospace;font-size:13px;color:var(--muted)}
+.missed-sep{color:var(--muted);font-size:12px}
+.missed-a{font-family:'Space Mono',monospace;font-size:14px;color:#ff8a8a;font-weight:700}
+.import-label{display:inline-flex;align-items:center;gap:6px;background:var(--s2);border:1px solid var(--border);border-radius:8px;padding:9px 18px;font-size:14px;font-weight:500;cursor:pointer;color:var(--text);transition:.15s}
+.import-label:hover{border-color:var(--muted)}
+</style>
+</head>
+<body>
+
+<header>
+  <div class="logo">⬡ KemiQuiz</div>
+  <nav>
+    <button class="nav-btn active" onclick="showSection('glosor',this)">Glosor</button>
+    <button class="nav-btn" onclick="showSection('studera',this)">Studera</button>
+    <button class="nav-btn" onclick="showSection('spela',this)">🎮 Spela</button>
+  </nav>
+</header>
+
+<!-- GLOSOR -->
+<div class="section active" id="sec-glosor">
+  <h1>Mina glosor</h1>
+  <p class="sub">Lägg till kemiska ämnen — namn, formel och egenskaper</p>
+
+  <div class="card">
+    <div class="grid-2" style="margin-bottom:10px">
+      <div>
+        <label class="field-label">Namn</label>
+        <input type="text" id="inp-name" placeholder="t.ex. Natriumklorid">
+      </div>
+      <div>
+        <label class="field-label">Formel / Beteckning</label>
+        <input type="text" id="inp-sym" placeholder="t.ex. NaCl">
+      </div>
+    </div>
+    <div style="margin-bottom:12px">
+      <label class="field-label">Egenskaper (valfritt)</label>
+      <textarea id="inp-props" placeholder="t.ex. Vitt kristallint salt, löser sig i vatten"></textarea>
+    </div>
+    <button class="btn btn-primary" onclick="addEntry()">+ Lägg till</button>
+  </div>
+
+  <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:10px;flex-wrap:wrap;gap:8px">
+    <span id="vc-count" style="font-size:13px;color:var(--muted)"></span>
+    <div style="display:flex;gap:8px;flex-wrap:wrap">
+      <label class="import-label" title="Importera CSV eller JSON">
+        📂 Importera fil
+        <input type="file" id="file-import" accept=".csv,.json" style="display:none" onchange="importFile(this)">
+      </label>
+      <button class="btn btn-secondary btn-sm" onclick="exportCSV()">⬇ Exportera CSV</button>
+      <button class="btn btn-danger btn-sm" onclick="clearAll()">Rensa alla</button>
+    </div>
+  </div>
+  <div id="import-msg" style="display:none;font-size:13px;margin-bottom:10px;padding:8px 12px;border-radius:6px"></div>
+  <div id="vocab-empty" class="empty" style="display:none"><h3>Inga glosor ännu</h3><p>Lägg till ämnen ovan för att komma igång.</p></div>
+  <table class="vocab-table" id="vocab-tbl">
+    <thead><tr><th>Namn</th><th>Formel</th><th>Egenskaper</th><th></th></tr></thead>
+    <tbody id="vocab-body"></tbody>
+  </table>
+</div>
+
+<!-- STUDERA -->
+<div class="section" id="sec-studera">
+  <div class="fc-wrap">
+    <h1 style="margin-bottom:1.5rem">Studera</h1>
+
+    <div class="quiz-mode-row">
+      <button class="qmode active" data-fc="sym" onclick="setFcMode('sym',this)">Formel → Namn</button>
+      <button class="qmode" data-fc="name" onclick="setFcMode('name',this)">Namn → Formel</button>
+    </div>
+
+    <div id="fc-area">
+      <div class="flashcard" id="fc-card" onclick="flipCard()">
+        <span class="fc-badge" id="fc-badge">Formel → Namn</span>
+        <div class="fc-q" id="fc-q">—</div>
+        <div class="fc-a" id="fc-a" style="display:none"></div>
+        <div class="fc-props" id="fc-props" style="display:none"></div>
+        <div class="fc-hint" id="fc-hint">Klicka för att se svaret</div>
+      </div>
+
+      <div class="progress-bar"><div class="progress-fill" id="fc-prog" style="width:0%"></div></div>
+
+      <div class="fc-nav">
+        <button class="btn btn-secondary" onclick="prevCard()">← Föregående</button>
+        <span class="fc-ctr" id="fc-ctr">—</span>
+        <button class="btn btn-secondary" onclick="nextCard()">Nästa →</button>
+      </div>
+      <button class="btn btn-secondary" style="align-self:center" onclick="shuffleCards()">🔀 Blanda</button>
+    </div>
+    <div id="fc-empty" class="empty" style="display:none"><h3>Inga glosor att studera</h3><p>Gå till <em>Glosor</em> och lägg till ämnen.</p></div>
+  </div>
+</div>
+
+<!-- SPELA -->
+<div class="section" id="sec-spela">
+  <div id="game-wrap">
+    <div id="game-hud">
+      <div class="hud-stat"><span class="hud-label">Poäng</span><span class="hud-val s" id="h-score">0</span></div>
+      <div class="hud-stat"><span class="hud-label">Nivå</span><span class="hud-val l" id="h-level">1</span></div>
+      <div class="hud-stat"><span class="hud-label">Liv</span><span class="hud-val v" id="h-lives">❤❤❤</span></div>
+      <div class="spacer"></div>
+      <span id="h-mode" style="font-size:12px;color:var(--muted)"></span>
+      <button class="btn btn-secondary btn-sm" id="pause-btn" onclick="togglePause()" style="display:none">Paus</button>
+    </div>
+
+    <div id="game-canvas-wrap">
+      <canvas id="gameCanvas"></canvas>
+
+      <div id="overlay">
+        <div class="ov-title" id="ov-title">Kemi-rasen ⚗</div>
+        <div class="ov-sub" id="ov-sub">Skriv rätt svar på de fallande blocken och tryck Enter för att förstöra dem! Ju snabbare blocken faller, desto fler poäng.</div>
+        <div class="ov-score" id="ov-score" style="display:none"></div>
+
+        <div class="gmode-row">
+          <button class="gmode-btn sel" id="gm-sym" onclick="setGMode('sym')">Formel → Namn</button>
+          <button class="gmode-btn" id="gm-name" onclick="setGMode('name')">Namn → Formel</button>
+          <button class="gmode-btn" id="gm-mixed" onclick="setGMode('mixed')">Blandat</button>
+        </div>
+
+        <button class="btn btn-primary" style="font-size:15px;padding:13px 40px" onclick="startGame()">Starta spelet</button>
+        <div id="ov-warn">Lägg till glosor under "Glosor" för att kunna spela!</div>
+      </div>
+    </div>
+
+    <div id="game-input-row">
+      <span style="color:var(--muted);font-size:13px;white-space:nowrap">Ditt svar:</span>
+      <input type="text" id="game-answer-inp" placeholder="Skriv svaret och tryck Enter…" autocomplete="off" spellcheck="false" disabled>
+      <button class="btn btn-primary" onclick="submitAnswer()">↵ Enter</button>
+    </div>
+  </div>
+</div>
+
+<script>
+// ═══════════════════════════════════════════════
+// DATA & STORAGE
+// ═══════════════════════════════════════════════
+const DEFAULTS = [
+  {id:'d1',name:'Vatten',sym:'H₂O',props:'Flytande vid rumstemperatur, universallösningsmedel'},
+  {id:'d2',name:'Natriumklorid',sym:'NaCl',props:'Bordssalt, vitt kristallint salt, löser sig i vatten'},
+  {id:'d3',name:'Koldioxid',sym:'CO₂',props:'Gas, bildas vid förbränning, absorberas av växter'},
+  {id:'d4',name:'Syrgas',sym:'O₂',props:'Gas, nödvändig för andning och förbränning'},
+  {id:'d5',name:'Väte',sym:'H₂',props:'Lättaste grundämnet, brännbar gas'},
+  {id:'d6',name:'Natrium',sym:'Na',props:'Mjukt alkalimetall, reagerar häftigt med vatten'},
+  {id:'d7',name:'Klor',sym:'Cl₂',props:'Gulgrön giftig gas, används i desinfektionsmedel'},
+  {id:'d8',name:'Järn',sym:'Fe',props:'Gråvitt magnetiskt metall, rostar i fukt'},
+  {id:'d9',name:'Koppar',sym:'Cu',props:'Rödbrun metall, utmärkt elektrisk ledare'},
+  {id:'d10',name:'Guld',sym:'Au',props:'Gul ädelmetall, korroderar inte'},
+  {id:'d11',name:'Silver',sym:'Ag',props:'Vit ädelmetall, bäst elektrisk ledare av alla metaller'},
+  {id:'d12',name:'Kväve',sym:'N₂',props:'Färglös gas, 78 % av luften, kvävningsmedel'},
+  {id:'d13',name:'Svavelsyra',sym:'H₂SO₄',props:'Stark syra, starkt korrosiv, används i bilbatterier'},
+  {id:'d14',name:'Saltsyra',sym:'HCl',props:'Stark syra, finns naturligt i magsäcken'},
+  {id:'d15',name:'Natriumhydroxid',sym:'NaOH',props:'Stark bas (lut), frätande, löser upp fett'},
+  {id:'d16',name:'Kalcium',sym:'Ca',props:'Silvervitt alkalisk jordmetall, viktigt för skelett och tänder'},
+  {id:'d17',name:'Kalciumkarbonat',sym:'CaCO₃',props:'Vitt pulver, krita, marmor och kalksten'},
+  {id:'d18',name:'Metan',sym:'CH₄',props:'Enklaste kolvätet, naturgas, brinnbar'},
+  {id:'d19',name:'Ammoniak',sym:'NH₃',props:'Stark kvävande lukt, svag bas, används i gödselmedel'},
+  {id:'d20',name:'Glukos',sym:'C₆H₁₂O₆',props:'Druvsocker, cellernas viktigaste energikälla'},
+];
+
+let entries = [];
+
+function loadData() {
+  try {
+    const s = localStorage.getItem('kemi_v2');
+    entries = s ? JSON.parse(s) : DEFAULTS.map(e=>({...e}));
+  } catch { entries = DEFAULTS.map(e=>({...e})); }
+  if (!entries.length) { entries = DEFAULTS.map(e=>({...e})); save(); }
+}
+function save() {
+  try { localStorage.setItem('kemi_v2', JSON.stringify(entries)); } catch {}
+}
+function uid() { return 'e' + Date.now() + Math.random().toString(36).slice(2,5); }
+function esc(s) { return s.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;'); }
+
+// ═══════════════════════════════════════════════
+// NAVIGATION
+// ═══════════════════════════════════════════════
+function showSection(id, btn) {
+  document.querySelectorAll('.section').forEach(s=>s.classList.remove('active'));
+  document.querySelectorAll('.nav-btn').forEach(b=>b.classList.remove('active'));
+  document.getElementById('sec-'+id).classList.add('active');
+  btn.classList.add('active');
+  if (id==='studera') initStudy();
+  if (id==='spela') { setTimeout(resizeCanvas, 50); }
+}
+
+// ═══════════════════════════════════════════════
+// VOCABULARY MANAGER
+// ═══════════════════════════════════════════════
+function addEntry() {
+  const name = document.getElementById('inp-name').value.trim();
+  const sym = document.getElementById('inp-sym').value.trim();
+  const props = document.getElementById('inp-props').value.trim();
+  if (!name || !sym) { shake('inp-name'); return; }
+  entries.push({ id: uid(), name, sym, props });
+  save();
+  renderVocab();
+  ['inp-name','inp-sym','inp-props'].forEach(id=>document.getElementById(id).value='');
+  document.getElementById('inp-name').focus();
+}
+
+function deleteEntry(id) {
+  entries = entries.filter(e=>e.id!==id);
+  save(); renderVocab();
+}
+
+function clearAll() {
+  if (confirm('Rensa alla glosor? Standardglosorna tas också bort.')) {
+    entries = []; save(); renderVocab();
+  }
+}
+
+function showImportMsg(text, ok){
+  const el=document.getElementById('import-msg');
+  el.textContent=text;
+  el.style.display='block';
+  el.style.background=ok?'rgba(15,212,160,.1)':'rgba(240,84,84,.1)';
+  el.style.color=ok?'var(--accent)':'var(--red)';
+  el.style.border=ok?'1px solid rgba(15,212,160,.3)':'1px solid rgba(240,84,84,.3)';
+  setTimeout(()=>el.style.display='none',4000);
+}
+
+function importFile(input){
+  const file=input.files[0]; if(!file) return;
+  const reader=new FileReader();
+  reader.onload=e=>{
+    const text=e.target.result.trim();
+    try{
+      let imported=[];
+      if(file.name.endsWith('.json')){
+        const data=JSON.parse(text);
+        const arr=Array.isArray(data)?data:data.entries||data.glosor||[];
+        imported=arr.map(r=>({
+          id:uid(),
+          name:(r.name||r.namn||r.Namn||'').trim(),
+          sym:(r.sym||r.symbol||r.formel||r.Formel||r.beteckning||'').trim(),
+          props:(r.props||r.egenskaper||r.Egenskaper||r.properties||'').trim()
+        })).filter(r=>r.name&&r.sym);
+      } else {
+        // CSV — handle both comma and semicolon separators
+        const lines=text.split(/\r?\n/).filter(l=>l.trim());
+        // detect separator
+        const sep=lines[0].includes(';')?';':',';
+        // skip header row if first cell looks like a header
+        const firstCell=lines[0].split(sep)[0].toLowerCase().replace(/"/g,'').trim();
+        const hasHeader=['namn','name','ämne'].includes(firstCell);
+        const dataLines=hasHeader?lines.slice(1):lines;
+        imported=dataLines.map(line=>{
+          const cols=parseCSVRow(line,sep);
+          return {id:uid(),name:(cols[0]||'').trim(),sym:(cols[1]||'').trim(),props:(cols[2]||'').trim()};
+        }).filter(r=>r.name&&r.sym);
+      }
+      if(!imported.length){showImportMsg('Inga giltiga rader hittades i filen.',false);return;}
+      // merge: skip duplicates by name+sym
+      let added=0;
+      for(const r of imported){
+        const dup=entries.some(e=>norm(e.name)===norm(r.name)&&norm(e.sym)===norm(r.sym));
+        if(!dup){entries.push(r);added++;}
+      }
+      save(); renderVocab();
+      showImportMsg(`${added} glosor importerade (${imported.length-added} dubbletter hoppades över).`,true);
+    }catch(err){
+      showImportMsg('Kunde inte läsa filen. Kontrollera formatet.',false);
+    }
+    input.value='';
+  };
+  reader.readAsText(file,'UTF-8');
+}
+
+function parseCSVRow(line,sep){
+  const cols=[]; let cur='', inQ=false;
+  for(let i=0;i<line.length;i++){
+    const c=line[i];
+    if(c==='"'){inQ=!inQ;}
+    else if(c===sep&&!inQ){cols.push(cur);cur='';}
+    else{cur+=c;}
+  }
+  cols.push(cur);
+  return cols;
+}
+
+function exportCSV(){
+  if(!entries.length){alert('Inga glosor att exportera.');return;}
+  const header='Namn,Formel,Egenskaper';
+  const rows=entries.map(e=>[csvCell(e.name),csvCell(e.sym),csvCell(e.props||'')].join(','));
+  const csv=header+'\n'+rows.join('\n');
+  const blob=new Blob(['\uFEFF'+csv],{type:'text/csv;charset=utf-8'});
+  const url=URL.createObjectURL(blob);
+  const a=document.createElement('a');
+  a.href=url; a.download='kemi_glosor.csv'; a.click();
+  URL.revokeObjectURL(url);
+}
+
+function csvCell(s){
+  if(/[,"\n]/.test(s)) return '"'+s.replace(/"/g,'""')+'"';
+  return s;
+}
+
+function shake(id) {
+  const el = document.getElementById(id);
+  el.style.borderColor = 'var(--red)';
+  setTimeout(() => el.style.borderColor = '', 800);
+  el.focus();
+}
+
+function renderVocab() {
+  const body = document.getElementById('vocab-body');
+  const empty = document.getElementById('vocab-empty');
+  const tbl = document.getElementById('vocab-tbl');
+  document.getElementById('vc-count').textContent = entries.length + ' glosor';
+  if (!entries.length) {
+    tbl.style.display='none'; empty.style.display='block'; return;
+  }
+  tbl.style.display=''; empty.style.display='none';
+  body.innerHTML = entries.map(e=>`
+    <tr>
+      <td>${esc(e.name)}</td>
+      <td class="sym">${esc(e.sym)}</td>
+      <td class="props" title="${esc(e.props||'')}">${esc(e.props||'—')}</td>
+      <td><button class="btn btn-danger btn-sm" onclick="deleteEntry('${e.id}')">×</button></td>
+    </tr>`).join('');
+}
+
+document.getElementById('inp-sym').addEventListener('keydown', e=>{ if(e.key==='Enter') addEntry(); });
+document.getElementById('inp-props').addEventListener('keydown', e=>{ if(e.key==='Enter'&&!e.shiftKey){e.preventDefault();addEntry();} });
+
+// ═══════════════════════════════════════════════
+// FLASHCARD / STUDY MODE
+// ═══════════════════════════════════════════════
+let fcCards = [], fcIdx = 0, fcMode = 'sym', fcFlipped = false;
+
+function setFcMode(m, btn) {
+  fcMode = m;
+  document.querySelectorAll('.qmode').forEach(b=>b.classList.remove('active'));
+  btn.classList.add('active');
+  fcIdx = 0; fcFlipped = false; renderCard();
+}
+
+function initStudy() {
+  fcCards = [...entries];
+  fcIdx = 0; fcFlipped = false;
+  renderCard();
+}
+
+function renderCard() {
+  const area = document.getElementById('fc-area');
+  const empty = document.getElementById('fc-empty');
+  if (!fcCards.length) { area.style.display='none'; empty.style.display='block'; return; }
+  area.style.display='block'; empty.style.display='none';
+  const c = fcCards[fcIdx];
+  const q = fcMode==='sym' ? c.sym : c.name;
+  const a = fcMode==='sym' ? c.name : c.sym;
+  document.getElementById('fc-badge').textContent = fcMode==='sym' ? 'Formel → Namn' : 'Namn → Formel';
+  document.getElementById('fc-q').textContent = q;
+  document.getElementById('fc-a').textContent = a;
+  document.getElementById('fc-a').style.display = 'none';
+  document.getElementById('fc-props').style.display = 'none';
+  document.getElementById('fc-props').textContent = c.props || '';
+  document.getElementById('fc-hint').textContent = 'Klicka för att se svaret';
+  document.getElementById('fc-ctr').textContent = (fcIdx+1)+' / '+fcCards.length;
+  document.getElementById('fc-prog').style.width = ((fcIdx+1)/fcCards.length*100)+'%';
+  fcFlipped = false;
+}
+
+function flipCard() {
+  if (!fcCards.length) return;
+  fcFlipped = !fcFlipped;
+  document.getElementById('fc-a').style.display = fcFlipped ? 'block' : 'none';
+  const c = fcCards[fcIdx];
+  if (fcFlipped && c.props) {
+    document.getElementById('fc-props').style.display = 'block';
+    document.getElementById('fc-hint').textContent = '';
+  } else {
+    document.getElementById('fc-props').style.display = 'none';
+    document.getElementById('fc-hint').textContent = fcFlipped ? '' : 'Klicka för att se svaret';
+  }
+}
+function nextCard() { if(!fcCards.length) return; fcIdx=(fcIdx+1)%fcCards.length; renderCard(); }
+function prevCard() { if(!fcCards.length) return; fcIdx=(fcIdx-1+fcCards.length)%fcCards.length; renderCard(); }
+function shuffleCards() {
+  for(let i=fcCards.length-1;i>0;i--){const j=Math.floor(Math.random()*(i+1));[fcCards[i],fcCards[j]]=[fcCards[j],fcCards[i]];}
+  fcIdx=0; renderCard();
+}
+
+// ═══════════════════════════════════════════════
+// GAME ENGINE
+// ═══════════════════════════════════════════════
+const canvas = document.getElementById('gameCanvas');
+const ctx = canvas.getContext('2d');
+
+// Block color themes [fill, stroke, textColor]
+const THEMES = [
+  ['#0a2f24','#0fd4a0','#0fd4a0'],
+  ['#0c1f40','#4f8dff','#4f8dff'],
+  ['#1c0e38','#9b73ff','#9b73ff'],
+  ['#2c1e06','#f4b942','#f4b942'],
+];
+
+let gMode='sym', gRunning=false, gPaused=false;
+let gScore=0, gLives=3, gLevel=1, gDestroyed=0;
+let blocks=[], sparks=[], floaters=[];
+let spawnTimer=0, spawnInterval=200, gBaseSpeed=0.45;
+let lastTs=0, animReq=null;
+
+function setGMode(m) {
+  gMode = m;
+  document.querySelectorAll('.gmode-btn').forEach(b=>b.classList.remove('sel'));
+  document.getElementById('gm-'+m).classList.add('sel');
+}
+
+function resizeCanvas() {
+  const w = document.getElementById('game-canvas-wrap');
+  canvas.width = w.clientWidth || 800;
+  canvas.height = w.clientHeight || 500;
+}
+window.addEventListener('resize', ()=>{
+  if(document.getElementById('sec-spela').classList.contains('active')) resizeCanvas();
+});
+
+function makeBlock(entry) {
+  const mode = gMode==='mixed' ? (Math.random()<.5?'sym':'name') : gMode;
+  const q = mode==='sym' ? entry.sym : entry.name;
+  const ans = mode==='sym' ? entry.name : entry.sym;
+  const ti = Math.floor(Math.random()*THEMES.length);
+  const w = Math.max(160, Math.min(240, q.length*14+60));
+  const h = 64;
+  const x = 12 + Math.random()*(canvas.width-w-24);
+  const spd = gBaseSpeed + (gLevel-1)*0.12 + Math.random()*0.15;
+  return {x,y:-h,w,h, q,ans:norm(ans), raw:ans, entry, theme:THEMES[ti], speed:spd, wobble:Math.random()*Math.PI*2, id:uid()};
+}
+
+function norm(s) {
+  const subMap={'₀':'0','₁':'1','₂':'2','₃':'3','₄':'4','₅':'5','₆':'6','₇':'7','₈':'8','₉':'9'};
+  const supMap={'⁰':'0','¹':'1','²':'2','³':'3','⁴':'4','⁵':'5','⁶':'6','⁷':'7','⁸':'8','⁹':'9'};
+  return s.toLowerCase().split('').map(c=>subMap[c]||supMap[c]||c).join('').trim();
+}
+
+function drawBlock(b) {
+  const {x,y,w,h,q,theme} = b;
+  const [fill,stroke,textCol] = theme;
+  ctx.save();
+  ctx.shadowColor = stroke; ctx.shadowBlur = 10;
+  ctx.fillStyle = fill; ctx.strokeStyle = stroke; ctx.lineWidth = 1.5;
+  rrect(x,y,w,h,10); ctx.fill(); ctx.stroke();
+  ctx.shadowBlur = 0;
+  ctx.fillStyle = textCol;
+  ctx.font = `bold 15px 'Space Mono',monospace`;
+  ctx.textAlign='center'; ctx.textBaseline='middle';
+  const maxW = w-16;
+  const words = q.split(' ');
+  let line='', lines=[];
+  for(const word of words){
+    const test = line?line+' '+word:word;
+    if(ctx.measureText(test).width>maxW&&line){lines.push(line);line=word;}
+    else{line=test;}
+  }
+  if(line) lines.push(line);
+  const lh=18, total=lines.length*lh;
+  lines.forEach((l,i)=>ctx.fillText(l,x+w/2,y+h/2-total/2+i*lh+lh/2,maxW));
+  // Danger glow at bottom
+  const danger=(y+h)/(canvas.height-58);
+  if(danger>.65){
+    const alpha=Math.min((danger-.65)*2.5,.7);
+    ctx.fillStyle=`rgba(240,84,84,${alpha})`;
+    rrect(x,y+h-5,w,5,3); ctx.fill();
+  }
+  ctx.restore();
+}
+
+function rrect(x,y,w,h,r){
+  ctx.beginPath();
+  ctx.moveTo(x+r,y);ctx.lineTo(x+w-r,y);ctx.quadraticCurveTo(x+w,y,x+w,y+r);
+  ctx.lineTo(x+w,y+h-r);ctx.quadraticCurveTo(x+w,y+h,x+w-r,y+h);
+  ctx.lineTo(x+r,y+h);ctx.quadraticCurveTo(x,y+h,x,y+h-r);
+  ctx.lineTo(x,y+r);ctx.quadraticCurveTo(x,y,x+r,y);ctx.closePath();
+}
+
+function spawnSparks(b) {
+  for(let i=0;i<22;i++){
+    sparks.push({
+      x:b.x+b.w/2+(Math.random()-.5)*b.w*.7,
+      y:b.y+b.h/2+(Math.random()-.5)*b.h*.7,
+      vx:(Math.random()-.5)*6, vy:(Math.random()-.5)*6-1.5,
+      life:1, size:Math.random()*5+2, col:b.theme[1]
+    });
+  }
+}
+
+function drawSparks(){
+  for(const p of sparks){
+    ctx.save();ctx.globalAlpha=p.life;ctx.fillStyle=p.col;
+    ctx.beginPath();ctx.arc(p.x,p.y,p.size,0,Math.PI*2);ctx.fill();ctx.restore();
+  }
+}
+
+function updateSparks(){
+  for(let i=sparks.length-1;i>=0;i--){
+    const p=sparks[i]; p.x+=p.vx; p.y+=p.vy; p.vy+=.18; p.life-=.05; p.size*=.93;
+    if(p.life<=0) sparks.splice(i,1);
+  }
+}
+
+function addFloater(x,y,text,col){
+  floaters.push({x,y,text,col,life:1.2,vy:-1.2});
+}
+
+function drawFloaters(){
+  for(const f of floaters){
+    ctx.save();ctx.globalAlpha=Math.min(f.life,1);
+    ctx.fillStyle=f.col;ctx.font='bold 16px "Space Mono",monospace';
+    ctx.textAlign='center';ctx.textBaseline='middle';
+    ctx.fillText(f.text,f.x,f.y);ctx.restore();
+  }
+}
+
+function updateFloaters(){
+  for(let i=floaters.length-1;i>=0;i--){
+    const f=floaters[i]; f.y+=f.vy; f.life-=.025;
+    if(f.life<=0) floaters.splice(i,1);
+  }
+}
+
+function drawBg(){
+  // grid
+  ctx.strokeStyle='rgba(255,255,255,0.025)';ctx.lineWidth=1;
+  const sp=55;
+  for(let x=0;x<canvas.width;x+=sp){ctx.beginPath();ctx.moveTo(x,0);ctx.lineTo(x,canvas.height);ctx.stroke();}
+  for(let y=0;y<canvas.height;y+=sp){ctx.beginPath();ctx.moveTo(0,y);ctx.lineTo(canvas.width,y);ctx.stroke();}
+  // danger line
+  const dy=canvas.height-10;
+  ctx.strokeStyle='rgba(240,84,84,0.35)';ctx.lineWidth=2;ctx.setLineDash([10,10]);
+  ctx.beginPath();ctx.moveTo(0,dy);ctx.lineTo(canvas.width,dy);ctx.stroke();ctx.setLineDash([]);
+}
+
+function gameLoop(ts){
+  if(!gRunning||gPaused) return;
+  if(!lastTs) lastTs=ts;
+  lastTs=ts;
+  ctx.clearRect(0,0,canvas.width,canvas.height);
+  drawBg();
+
+  spawnTimer++;
+  const maxB=Math.min(1+Math.floor((gLevel-1)*.6),6);
+  if(spawnTimer>=spawnInterval && blocks.length<maxB && entries.length){
+    blocks.push(makeBlock(entries[Math.floor(Math.random()*entries.length)]));
+    spawnTimer=0;
+    spawnInterval=Math.max(55,200-(gLevel-1)*14);
+  }
+
+  for(let i=blocks.length-1;i>=0;i--){
+    const b=blocks[i];
+    b.y+=b.speed;
+    drawBlock(b);
+    if(b.y>canvas.height-10){
+      const missed=blocks.splice(i,1)[0];
+      loseLife(missed);
+    }
+  }
+  updateSparks(); drawSparks();
+  updateFloaters(); drawFloaters();
+  animReq=requestAnimationFrame(gameLoop);
+}
+
+function submitAnswer(){
+  const inp=document.getElementById('game-answer-inp');
+  const raw=inp.value.trim();
+  if(!raw||!gRunning) return;
+  const typed=norm(raw);
+
+  // Find best match: lowest block (largest y) that matches
+  let hitIdx=-1, bestY=-1;
+  for(let i=0;i<blocks.length;i++){
+    const b=blocks[i];
+    if(typed===b.ans && b.y>bestY){ bestY=b.y; hitIdx=i; }
+  }
+
+  if(hitIdx>=0){
+    const b=blocks[hitIdx];
+    spawnSparks(b);
+    const pts=Math.round(10*b.speed*(1+gLevel*.4));
+    gScore+=pts; gDestroyed++;
+    addFloater(b.x+b.w/2, b.y+b.h/2, '+'+pts, b.theme[1]);
+    blocks.splice(hitIdx,1);
+    updateHUD();
+    inp.value='';
+    inp.classList.remove('no'); inp.classList.add('ok');
+    setTimeout(()=>inp.classList.remove('ok'),280);
+    if(gDestroyed%5===0){ gLevel++; gBaseSpeed+=0.04; showLvlUp(); updateHUD(); }
+  } else {
+    inp.classList.remove('ok'); inp.classList.add('no');
+    setTimeout(()=>inp.classList.remove('no'),300);
+  }
+}
+
+function showMissedAnswer(b){
+  document.querySelectorAll('.missed-popup').forEach(el=>el.remove());
+  const div=document.createElement('div');
+  div.className='missed-popup';
+  div.innerHTML=`<span class="missed-label">Missad! ✗</span>
+    <div class="missed-row">
+      <span class="missed-q">${esc(b.q)}</span>
+      <span class="missed-sep">→</span>
+      <span class="missed-a">${esc(b.raw)}</span>
+    </div>`;
+  document.getElementById('game-canvas-wrap').appendChild(div);
+  setTimeout(()=>div.remove(),2900);
+}
+
+function loseLife(block){
+  gLives--;
+  updateHUD();
+  if(block) showMissedAnswer(block);
+  const wrap=document.getElementById('game-canvas-wrap');
+  wrap.style.outline='3px solid rgba(240,84,84,.7)';
+  setTimeout(()=>wrap.style.outline='',400);
+  if(gLives<=0) endGame();
+}
+
+function updateHUD(){
+  document.getElementById('h-score').textContent=gScore;
+  document.getElementById('h-level').textContent=gLevel;
+  const hearts='❤'.repeat(Math.max(0,gLives))+'🖤'.repeat(Math.max(0,3-gLives));
+  document.getElementById('h-lives').textContent=hearts;
+}
+
+function showLvlUp(){
+  const div=document.createElement('div');
+  div.style.cssText=`position:absolute;left:50%;top:40%;transform:translate(-50%,-50%);
+    font-family:'Space Mono',monospace;font-size:22px;font-weight:700;color:var(--blue);
+    pointer-events:none;z-index:20;animation:lvlup 1.3s forwards`;
+  div.textContent='NIVÅ '+gLevel+' 🚀';
+  document.getElementById('game-canvas-wrap').appendChild(div);
+  setTimeout(()=>div.remove(),1300);
+}
+
+function startGame(){
+  if(!entries.length){ document.getElementById('ov-warn').style.display='block'; return; }
+  document.getElementById('ov-warn').style.display='none';
+  blocks=[]; sparks=[]; floaters=[];
+  gScore=0; gLives=3; gLevel=1; gDestroyed=0;
+  gBaseSpeed=0.45; spawnTimer=0; spawnInterval=200;
+  gPaused=false; gRunning=true; lastTs=0;
+  resizeCanvas();
+  updateHUD();
+  document.getElementById('overlay').style.display='none';
+  document.getElementById('game-answer-inp').disabled=false;
+  document.getElementById('game-answer-inp').focus();
+  document.getElementById('pause-btn').style.display='inline-flex';
+  document.getElementById('pause-btn').textContent='Paus';
+  const labels={sym:'Formel → Namn',name:'Namn → Formel',mixed:'Blandat'};
+  document.getElementById('h-mode').textContent=labels[gMode];
+  animReq=requestAnimationFrame(gameLoop);
+}
+
+function togglePause(){
+  if(!gRunning) return;
+  gPaused=!gPaused;
+  document.getElementById('pause-btn').textContent=gPaused?'Fortsätt':'Paus';
+  if(!gPaused){ lastTs=0; animReq=requestAnimationFrame(gameLoop); }
+}
+
+function endGame(){
+  gRunning=false;
+  if(animReq) cancelAnimationFrame(animReq);
+  document.getElementById('game-answer-inp').disabled=true;
+  document.getElementById('pause-btn').style.display='none';
+  const ov=document.getElementById('overlay');
+  ov.style.display='flex';
+  document.getElementById('ov-title').textContent='Spelet är slut! ⚗';
+  document.getElementById('ov-sub').textContent=`Du förstörde ${gDestroyed} block och nådde nivå ${gLevel}. Bra jobbat!`;
+  document.getElementById('ov-score').style.display='block';
+  document.getElementById('ov-score').textContent=gScore+' p';
+  document.querySelector('[onclick="startGame()"]').textContent='Spela igen';
+}
+
+document.getElementById('game-answer-inp').addEventListener('keydown', e=>{
+  if(e.key==='Enter') submitAnswer();
+});
+
+// ═══════════════════════════════════════════════
+// INIT
+// ═══════════════════════════════════════════════
+loadData();
+renderVocab();
+resizeCanvas();
+</script>
+</body>
+</html>
